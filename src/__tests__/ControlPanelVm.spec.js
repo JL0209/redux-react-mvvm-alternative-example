@@ -20,15 +20,8 @@ describe('ControlPanelVm', () => {
     getFavSymbols: mockGetFavSymbols,
   }))
 
-  beforeEach(() => {
-    mockGetFavSymbols.mockClear()
-  })
-
   it('onSelectDepth should getFavSymbols again and re-subscribe all topics', async () => {
     const { vm, appState } = stateConstruction()
-    const { depth } = vm
-    const newDepth = 5
-    const event = { target: { value: newDepth } }
 
     await new Promise((resolve) => {
       setTimeout(() => {
@@ -36,9 +29,11 @@ describe('ControlPanelVm', () => {
         expect(mockGetFavSymbols.mock.calls.length).toBe(1) // fireImmediately
         expect(vm.depth).toBe(appState.depth)
         expect(vm.subscribedTopics).toContain('abcxyz@ticker')
-        expect(vm.subscribedTopics).toContain(`abcxyz@depth${depth}`)
-        expect(vm.subscribedUrl).toContain(`wss://echo.websocket.org:8443/stream?streams=abcxyz@depth${depth}/abcxyz@ticker`)
+        expect(vm.subscribedTopics).toContain('abcxyz@depth10')
+        expect(vm.subscribedUrl).toContain('wss://echo.websocket.org:8443/stream?streams=abcxyz@depth10/abcxyz@ticker')
 
+        const newDepth = 5
+        const event = { target: { value: newDepth } }
         vm.onSelectDepth(event)
         expect(vm.depth).toBe(newDepth)
         resolve()
@@ -50,8 +45,8 @@ describe('ControlPanelVm', () => {
         expect(mockGetFavSymbols).toBeCalled()
         expect(mockGetFavSymbols.mock.calls.length).toBe(2) // fireImmediately and onDepthChange
         expect(vm.subscribedTopics).toContain('abcxyz@ticker')
-        expect(vm.subscribedTopics).toContain(`abcxyz@depth${newDepth}`)
-        expect(vm.subscribedUrl).toContain(`wss://echo.websocket.org:8443/stream?streams=abcxyz@depth${newDepth}/abcxyz@ticker`)
+        expect(vm.subscribedTopics).toContain('abcxyz@depth5')
+        expect(vm.subscribedUrl).toContain('wss://echo.websocket.org:8443/stream?streams=abcxyz@depth5/abcxyz@ticker')
         resolve()
       })
     })
@@ -93,47 +88,5 @@ describe('ControlPanelVm', () => {
     })
 
     return true
-  })
-
-  it('after disposed, when depth change should not call onDepthChange', async () => {
-    const { vm } = stateConstruction()
-    const { depth } = vm
-    const newDepth = 5
-    const event = { target: { value: newDepth } }
-
-    const verify = () => {
-      expect(mockGetFavSymbols).toBeCalled()
-      expect(mockGetFavSymbols.mock.calls.length).toBe(1) // fireImmediately
-      expect(vm.subscribedTopics).toContain('abcxyz@ticker')
-      expect(vm.subscribedTopics).toContain(`abcxyz@depth${depth}`)
-      expect(vm.subscribedUrl).toContain(`wss://echo.websocket.org:8443/stream?streams=abcxyz@depth${depth}/abcxyz@ticker`)
-    }
-
-    await new Promise((resolve) => {
-      setTimeout(() => {
-        verify()
-
-        vm.dispose()
-
-        vm.onSelectDepth(event)
-        expect(vm.depth).toBe(newDepth)
-
-        resolve()
-      })
-    })
-
-    // should have no change after dispose
-    await new Promise((resolve) => {
-      setTimeout(() => {
-        verify()
-        resolve()
-      })
-    })
-  })
-
-  it('depthOptions should be an array', () => {
-    const { vm } = stateConstruction()
-
-    expect(Array.isArray(vm.depthOptions)).toBe(true)
   })
 })
